@@ -12,6 +12,14 @@ __pycache__/
 # Streamlit
 .streamlit/secrets.toml
 
+# Node / Next.js
+node_modules/
+frontend/.next/
+frontend/out/
+
+# Electron desktop build
+desktop/release/
+
 # Editors / OS
 .vscode/
 .idea/

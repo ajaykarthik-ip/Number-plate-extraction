@@ -1,0 +1,57 @@
+{
+  "name": "autogate-nx-desktop",
+  "productName": "AutoGate NX",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Electron desktop shell for AutoGate NX (serves the exported UI and opens it in a window).",
+  "main": "main.js",
+  "author": "arobotnx",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win",
+    "dist:dir": "electron-builder --dir"
+  },
+  "devDependencies": {
+    "electron": "^31.7.6",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "in.arobotnx.autogatenx",
+    "productName": "AutoGateNX",
+    "asar": true,
+    "directories": {
+      "output": "release",
+      "buildResources": "assets"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "assets/**"
+    ],
+    "extraResources": [
+      {
+        "from": "../frontend/out",
+        "to": "site"
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "AutoGate NX",
+      "artifactName": "AutoGateNX-Setup-${version}.exe"
+    },
+    "portable": {
+      "artifactName": "AutoGateNX-Portable-${version}.exe"
+    }
+  }
+}
