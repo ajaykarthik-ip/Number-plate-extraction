@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "npm --prefix frontend run dev",
     "build": "npm --prefix frontend run build",
-    "app": "npm --prefix frontend run build && npm --prefix desktop start",
-    "exe": "npm --prefix frontend install && npm --prefix frontend run build && npm --prefix desktop install && npm --prefix desktop run dist",
-    "exe:fast": "npm --prefix frontend run build && npm --prefix desktop run dist:dir"
+    "app": "cd frontend && npm install && npm run build && cd .. && cd desktop && npm install && npm start",
+    "exe": "cd frontend && npm install && npm run build && cd .. && cd desktop && npm install && npm run dist",
+    "exe:fast": "cd frontend && npm run build && cd .. && cd desktop && npm run dist:dir"
   }
 }
