@@ -6,6 +6,7 @@ import {
   HiOutlinePlus,
   HiOutlineTrash,
   HiOutlineXMark,
+  HiOutlineExclamationTriangle,
 } from 'react-icons/hi2'
 import Plate from '@/components/common/Plate'
 import Badge from '@/components/common/Badge'
@@ -23,10 +24,13 @@ const categoryTone = {
 }
 
 export default function VehiclesPage() {
-  const { registry, authorize, revoke } = useGate()
+  const { registry, authorize, revoke, clearRegistry } = useGate()
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('All')
   const [formOpen, setFormOpen] = useState(false)
+  // Clearing the list cannot be undone — every plate here was typed in by hand
+  // — so the button asks once before it does it.
+  const [confirming, setConfirming] = useState(false)
   const [form, setForm] = useState({
     plate: '',
     owner: '',
@@ -66,13 +70,53 @@ export default function VehiclesPage() {
             The park allow-list. A plate that is not here does not get the barrier.
           </p>
         </div>
-        <button
-          onClick={() => setFormOpen(!formOpen)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors"
-        >
-          {formOpen ? <HiOutlineXMark className="w-4 h-4" /> : <HiOutlinePlus className="w-4 h-4" />}
-          {formOpen ? 'Cancel' : 'Register vehicle'}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {registry.length > 0 &&
+            (confirming ? (
+              <span className="flex items-center gap-2 px-3 py-2 rounded-lg border border-red-200 bg-red-50 text-xs text-red-700">
+                <HiOutlineExclamationTriangle className="w-4 h-4 shrink-0" />
+                Remove all {registry.length} plates? This cannot be undone.
+                <button
+                  suppressHydrationWarning
+                  onClick={() => {
+                    clearRegistry()
+                    setConfirming(false)
+                  }}
+                  className="px-2.5 py-1 rounded-md bg-red-600 hover:bg-red-700 text-white font-medium transition-colors"
+                >
+                  Remove all
+                </button>
+                <button
+                  suppressHydrationWarning
+                  onClick={() => setConfirming(false)}
+                  className="text-red-500 hover:text-red-700 font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+              </span>
+            ) : (
+              <button
+                suppressHydrationWarning
+                onClick={() => setConfirming(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-red-50 text-red-600 border border-red-200 text-sm font-medium rounded-lg transition-colors"
+              >
+                <HiOutlineTrash className="w-4 h-4" />
+                Remove all
+              </button>
+            ))}
+          <button
+            suppressHydrationWarning
+            onClick={() => setFormOpen(!formOpen)}
+            className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors"
+          >
+            {formOpen ? (
+              <HiOutlineXMark className="w-4 h-4" />
+            ) : (
+              <HiOutlinePlus className="w-4 h-4" />
+            )}
+            {formOpen ? 'Cancel' : 'Register vehicle'}
+          </button>
+        </div>
       </div>
 
       {formOpen && (
@@ -82,6 +126,7 @@ export default function VehiclesPage() {
         >
           <Field label="Number plate">
             <input
+              suppressHydrationWarning
               value={form.plate}
               onChange={(e) => setForm({ ...form, plate: e.target.value })}
               placeholder="TN 09 BX 4521"
@@ -91,6 +136,7 @@ export default function VehiclesPage() {
           </Field>
           <Field label="Driver / owner">
             <input
+              suppressHydrationWarning
               value={form.owner}
               onChange={(e) => setForm({ ...form, owner: e.target.value })}
               placeholder="Full name"
@@ -99,6 +145,7 @@ export default function VehiclesPage() {
           </Field>
           <Field label="Tenant">
             <select
+              suppressHydrationWarning
               value={form.tenant}
               onChange={(e) => setForm({ ...form, tenant: e.target.value })}
               className="input"
@@ -110,6 +157,7 @@ export default function VehiclesPage() {
           </Field>
           <Field label="Vehicle type">
             <select
+              suppressHydrationWarning
               value={form.type}
               onChange={(e) => setForm({ ...form, type: e.target.value })}
               className="input"
@@ -122,6 +170,7 @@ export default function VehiclesPage() {
           <Field label="Pass category">
             <div className="flex gap-2">
               <select
+                suppressHydrationWarning
                 value={form.category}
                 onChange={(e) => setForm({ ...form, category: e.target.value })}
                 className="input"
@@ -131,6 +180,7 @@ export default function VehiclesPage() {
                 ))}
               </select>
               <button
+                suppressHydrationWarning
                 type="submit"
                 className="px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors shrink-0"
               >
@@ -146,6 +196,7 @@ export default function VehiclesPage() {
           <div className="relative flex-1 min-w-[220px]">
             <HiOutlineMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
+              suppressHydrationWarning
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search plate, driver or tenant"
@@ -155,6 +206,7 @@ export default function VehiclesPage() {
           <div className="flex flex-wrap gap-1.5">
             {categories.map((c) => (
               <button
+                suppressHydrationWarning
                 key={c}
                 onClick={() => setCategory(c)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
@@ -198,6 +250,7 @@ export default function VehiclesPage() {
                   <td className="px-5 py-3 text-slate-500 tabular-nums">{v.validTill}</td>
                   <td className="px-5 py-3 text-right">
                     <button
+                      suppressHydrationWarning
                       onClick={() => revoke(v.plate)}
                       className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-red-600 bg-red-50 border border-red-200 hover:bg-red-100 transition-colors"
                     >
@@ -210,7 +263,9 @@ export default function VehiclesPage() {
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-5 py-12 text-center text-sm text-slate-400">
-                    No vehicles match that search.
+                    {registry.length === 0
+                      ? 'No vehicles registered yet — use Register vehicle to add the first plate.'
+                      : 'No vehicles match that search.'}
                   </td>
                 </tr>
               )}

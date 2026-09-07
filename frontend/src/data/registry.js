@@ -12,57 +12,23 @@ export const tenants = [
   'Cygnet Logistics (vendor)',
 ]
 
-export const allowedVehicles = [
-  { id: 1,  plate: 'TN09BX4521', owner: 'R. Karthik',       tenant: 'Nexora Systems — Block A',    type: 'Car',   category: 'Employee', pass: 'EMP-1042', validTill: '2026-12-31' },
-  { id: 2,  plate: 'TN22AC1188', owner: 'Priya Nandhini',   tenant: 'Vantage Analytics — Block B', type: 'Car',   category: 'Employee', pass: 'EMP-0871', validTill: '2026-10-15' },
-  { id: 3,  plate: 'TN10CJ7745', owner: 'Cygnet Logistics', tenant: 'Cygnet Logistics (vendor)',   type: 'Truck', category: 'Vendor',   pass: 'VEN-3310', validTill: '2026-09-30' },
-  { id: 4,  plate: 'KA05MJ2093', owner: 'S. Vignesh',       tenant: 'Helix Software — Block C',    type: 'Car',   category: 'Employee', pass: 'EMP-1550', validTill: '2027-01-20' },
-  { id: 5,  plate: 'TN07DK3390', owner: 'Park Shuttle 2',   tenant: 'Park Facilities',             type: 'Bus',   category: 'Facility', pass: 'FLT-0002', validTill: '2027-03-31' },
-  { id: 6,  plate: 'TN18AZ6612', owner: 'M. Fathima',       tenant: 'Helix Software — Block C',    type: 'Bike',  category: 'Employee', pass: 'EMP-2204', validTill: '2026-11-11' },
-  { id: 7,  plate: 'AP39QL8801', owner: 'Sundaram Parts',   tenant: 'Park Facilities',             type: 'Truck', category: 'Vendor',   pass: 'VEN-3419', validTill: '2026-12-01' },
-  { id: 8,  plate: 'TN01BF9034', owner: 'D. Anitha',        tenant: 'Nexora Systems — Block A',    type: 'Car',   category: 'Employee', pass: 'EMP-0619', validTill: '2027-02-28' },
-  { id: 9,  plate: 'TN11GH2255', owner: 'Rapido Cabs',      tenant: 'Park Facilities',             type: 'Car',   category: 'Cab',      pass: 'CAB-0117', validTill: '2026-10-31' },
-  { id: 10, plate: 'TN04LP7712', owner: 'Arun Prakash',     tenant: 'Vantage Analytics — Block B', type: 'Car',   category: 'Employee', pass: 'EMP-1903', validTill: '2027-04-15' },
-]
+// Empty on purpose: the allow-list is built in the Allowed Vehicles page and
+// kept in the browser from there. Seed rows here would come back every time
+// storage was cleared and fight whatever was registered by hand.
+export const allowedVehicles = []
 
-// The live loop walks this list forever. Plates absent from the registry above
-// are the "new vehicle" cases the gate has to stop.
-export const detectionScript = [
-  { plate: 'TN09BX4521', lane: 'Entry — Lane 1', direction: 'in',  confidence: 0.98, type: 'Car' },
-  { plate: 'TN10CJ7745', lane: 'Entry — Lane 2', direction: 'in',  confidence: 0.96, type: 'Truck' },
-  { plate: 'MH12GT7788', lane: 'Entry — Lane 1', direction: 'in',  confidence: 0.91, type: 'Car' },
-  { plate: 'TN22AC1188', lane: 'Entry — Lane 1', direction: 'in',  confidence: 0.97, type: 'Car' },
-  { plate: 'TN07DK3390', lane: 'Exit — Lane 3',  direction: 'out', confidence: 0.99, type: 'Bus' },
-  { plate: 'DL8CAF1122', lane: 'Entry — Lane 2', direction: 'in',  confidence: 0.88, type: 'Truck' },
-  { plate: 'KA05MJ2093', lane: 'Entry — Lane 1', direction: 'in',  confidence: 0.95, type: 'Car' },
-  { plate: 'TN11GH2255', lane: 'Exit — Lane 3',  direction: 'out', confidence: 0.93, type: 'Car' },
-  { plate: 'TN33XR0099', lane: 'Entry — Lane 1', direction: 'in',  confidence: 0.85, type: 'Car' },
-  { plate: 'AP39QL8801', lane: 'Entry — Lane 2', direction: 'in',  confidence: 0.94, type: 'Truck' },
-  { plate: 'TN01BF9034', lane: 'Exit — Lane 4',  direction: 'out', confidence: 0.98, type: 'Car' },
-  { plate: 'TN18AZ6612', lane: 'Entry — Lane 1', direction: 'in',  confidence: 0.92, type: 'Bike' },
-  { plate: 'TN04LP7712', lane: 'Entry — Lane 1', direction: 'in',  confidence: 0.96, type: 'Car' },
-  { plate: 'TN09BX4521', lane: 'Exit — Lane 3',  direction: 'out', confidence: 0.97, type: 'Car' },
-]
+// Emptied on request — every plate that used to be replayed here is gone.
+// The Live View loop walks this list, so with nothing in it the pane no longer
+// invents reads: it waits for a real one. Nothing else reads this export, so
+// leaving it declared and empty keeps the loop's shape for whenever an ANPR
+// engine starts feeding it.
+export const detectionScript = []
 
-// Seeded with fixed timestamps on purpose: anything generated at render time
+// Empty on purpose: the movement log fills from the Live View loop. Seeded
+// rows would need fixed timestamps anyway — anything generated at render time
 // (Date.now, Math.random) differs between server and client and trips React
-// hydration. Live entries get real clock times, but only after mount.
-export const seedEvents = [
-  { id: 's1',  plate: 'TN09BX4521', time: '09:12:04', lane: 'Entry — Lane 1', direction: 'in',  confidence: 0.97, decision: 'granted' },
-  { id: 's2',  plate: 'TN22AC1188', time: '09:08:41', lane: 'Entry — Lane 1', direction: 'in',  confidence: 0.95, decision: 'granted' },
-  { id: 's3',  plate: 'HR26DQ5511', time: '09:03:17', lane: 'Entry — Lane 2', direction: 'in',  confidence: 0.87, decision: 'denied'  },
-  { id: 's4',  plate: 'TN10CJ7745', time: '08:57:52', lane: 'Entry — Lane 2', direction: 'in',  confidence: 0.99, decision: 'granted' },
-  { id: 's5',  plate: 'TN07DK3390', time: '08:49:30', lane: 'Exit — Lane 3',  direction: 'out', confidence: 0.98, decision: 'granted' },
-  { id: 's6',  plate: 'KA05MJ2093', time: '08:44:09', lane: 'Entry — Lane 1', direction: 'in',  confidence: 0.94, decision: 'granted' },
-  { id: 's7',  plate: 'MH12GT7788', time: '08:38:55', lane: 'Entry — Lane 1', direction: 'in',  confidence: 0.90, decision: 'denied'  },
-  { id: 's8',  plate: 'TN18AZ6612', time: '08:31:12', lane: 'Entry — Lane 2', direction: 'in',  confidence: 0.93, decision: 'granted' },
-  { id: 's9',  plate: 'AP39QL8801', time: '08:22:40', lane: 'Entry — Lane 2', direction: 'in',  confidence: 0.96, decision: 'granted' },
-  { id: 's10', plate: 'TN01BF9034', time: '08:15:03', lane: 'Entry — Lane 1', direction: 'in',  confidence: 0.98, decision: 'granted' },
-  { id: 's11', plate: 'GJ01KM4477', time: '08:06:28', lane: 'Entry — Lane 1', direction: 'in',  confidence: 0.84, decision: 'denied'  },
-  { id: 's12', plate: 'TN11GH2255', time: '07:58:11', lane: 'Exit — Lane 3',  direction: 'out', confidence: 0.99, decision: 'granted' },
-  { id: 's13', plate: 'TN04LP7712', time: '07:51:47', lane: 'Entry — Lane 1', direction: 'in',  confidence: 0.96, decision: 'granted' },
-  { id: 's14', plate: 'TN09BX4521', time: '07:44:22', lane: 'Entry — Lane 1', direction: 'in',  confidence: 0.99, decision: 'granted' },
-]
+// hydration, so live entries only get real clock times after mount.
+export const seedEvents = []
 
 // Hourly in/out flow for the dashboard chart.
 export const hourlyFlow = [

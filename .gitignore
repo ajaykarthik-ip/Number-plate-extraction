@@ -9,8 +9,6 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 
-# Streamlit
-.streamlit/secrets.toml
 
 # Node / Next.js
 node_modules/

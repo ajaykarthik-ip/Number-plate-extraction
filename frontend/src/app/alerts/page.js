@@ -83,6 +83,7 @@ export default function AlertsPage() {
               <div className="flex items-center gap-2 shrink-0">
                 <Badge variant="danger">Blocked</Badge>
                 <button
+                  suppressHydrationWarning
                   onClick={() => authorize(a.plate)}
                   className="flex items-center gap-1.5 px-3 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs font-medium rounded-lg transition-colors"
                 >
@@ -98,7 +99,9 @@ export default function AlertsPage() {
               <HiOutlineShieldExclamation className="w-10 h-10 text-slate-200 mx-auto mb-3" />
               <p className="text-sm text-slate-500 font-medium">No blocked vehicles</p>
               <p className="text-xs text-slate-400 mt-1">
-                Everything that reached the gate today was on the allow-list.
+                {stats.total === 0
+                  ? 'Nothing has reached the gate yet.'
+                  : 'Everything that reached the gate today was on the allow-list.'}
               </p>
             </div>
           )}

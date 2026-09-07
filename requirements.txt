@@ -1,3 +1,9 @@
-google-genai>=2.19.0
-streamlit>=1.52
-pillow>=11
+# The bridge: opens the RTSP camera and re-serves it as MJPEG for the browser.
+opencv-python>=4.10
+
+# The reader: plate OCR, running locally on the CPU. This pulls in torch, so
+# the first install is a large one (~1GB) and the first run downloads ~100MB of
+# recognition weights into ~/.EasyOCR — after that it works with no network.
+# Video still works without it: bridge.py falls back to serving the picture
+# alone, and says so on startup.
+easyocr>=1.7

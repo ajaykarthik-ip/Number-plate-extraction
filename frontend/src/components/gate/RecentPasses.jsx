@@ -50,6 +50,12 @@ export default function RecentPasses({ limit = 8 }) {
             </div>
           )
         })}
+
+        {events.length === 0 && (
+          <p className="px-5 py-12 text-center text-xs text-slate-400">
+            Nothing has passed the gate yet. Movements appear here once the feed is running.
+          </p>
+        )}
       </div>
     </div>
   )

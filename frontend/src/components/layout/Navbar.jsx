@@ -12,6 +12,7 @@ export default function Navbar({ onMenuToggle }) {
     <header className="h-16 bg-white/90 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-4 lg:px-6 shrink-0 z-10">
       <div className="flex items-center gap-3">
         <button
+          suppressHydrationWarning
           onClick={onMenuToggle}
           className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
           aria-label="Toggle navigation"

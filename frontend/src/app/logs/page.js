@@ -49,7 +49,7 @@ export default function LogsPage() {
             Complete in/out history for the park, newest first.
           </p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg border border-slate-200 transition-colors">
+        <button suppressHydrationWarning className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg border border-slate-200 transition-colors">
           <HiOutlineArrowDownTray className="w-4 h-4" />
           Export CSV
         </button>
@@ -60,6 +60,7 @@ export default function LogsPage() {
           <div className="relative flex-1 min-w-[220px]">
             <HiOutlineMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
+              suppressHydrationWarning
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search a number plate"
@@ -124,7 +125,9 @@ export default function LogsPage() {
               {rows.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-5 py-12 text-center text-sm text-slate-400">
-                    No movements match these filters.
+                    {events.length === 0
+                      ? 'No movements logged yet — start the feed on Live View to record passes.'
+                      : 'No movements match these filters.'}
                   </td>
                 </tr>
               )}
@@ -145,6 +148,7 @@ function FilterGroup({ options, value, onChange }) {
     <div className="flex gap-1.5">
       {options.map((o) => (
         <button
+          suppressHydrationWarning
           key={o}
           onClick={() => onChange(o)}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
