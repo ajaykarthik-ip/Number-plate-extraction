@@ -143,6 +143,9 @@ than any setting here:
   ```
 
   Any YOLO `.pt` trained on plates works. Keep the weights outside the repo.
+  The built-in finder is not switched off by loading one: it still runs on the
+  patches the model returns nothing for, so a plate at an angle the model was
+  never trained on has a second chance at being found.
 
 ### Reading knobs
 

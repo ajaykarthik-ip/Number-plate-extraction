@@ -135,6 +135,38 @@ def plausible(plate):
     return bool(PLATE_RE.match(plate)) and plate[:2] in STATE_CODES
 
 
+def overlap(a, b):
+    """Intersection over union of two boxes.
+
+    Measured against the union, not against the smaller box, and the
+    difference between those two decides whether this pipeline works. A plate
+    candidate sits *inside* the motion region that is also offered up as a
+    candidate, and against the smaller box that scores a perfect 1.0 — so
+    every region-sized crop gets thrown away as a duplicate of the little box
+    within it. Those region crops are not spare: on a plate the locators only
+    half-find, reading the whole region is what recovers it. Union scores that
+    pair low and keeps both, while still collapsing the near-identical boxes
+    two kernels return for one plate.
+    """
+    ax, ay, aw, ah = a
+    bx, by, bw, bh = b
+    wide = max(0, min(ax + aw, bx + bw) - max(ax, bx))
+    tall = max(0, min(ay + ah, by + bh) - max(ay, by))
+    inter = wide * tall
+    union = aw * ah + bw * bh - inter
+    return inter / union if union else 0.0
+
+
+def dedupe_boxes(boxes, threshold=0.6):
+    """One box per plate, whichever locator or kernel found it first."""
+    kept = []
+    for box in boxes:
+        if any(overlap(box, k) > threshold for k in kept):
+            continue
+        kept.append(box)
+    return kept
+
+
 class PlateFinder:
     """Narrows a frame down to the handful of rectangles worth reading.
 
@@ -149,6 +181,13 @@ class PlateFinder:
     # a bumper or a shadow.
     MIN_RATIO, MAX_RATIO = 1.7, 6.0
     MIN_AREA = 700
+    # The kernel that joins a plate's glyphs into one blob has to be about as
+    # wide as its text, so any single kernel is tuned for plates at one
+    # distance: the pass that closes a near plate into one rectangle smears a
+    # far one into the bumper around it, and the pass that resolves the far one
+    # breaks the near one into words. Three of them cost three morphologies on
+    # a thumbnail, which is nothing beside a single OCR call.
+    KERNELS = ((11, 3), (17, 5), (27, 7))
     # A plate never fills the shot. Without this the blackhat pass happily
     # returns the skyline as one candidate, and OCR then spends thirty seconds
     # on a rectangle that could not possibly be a plate.
@@ -162,51 +201,64 @@ class PlateFinder:
             cv2.data.haarcascades + "haarcascade_russian_plate_number.xml"
         )
 
-    def candidates(self, gray):
+    def candidates(self, gray, limit=None):
+        """Plate-shaped rectangles in `gray`, best first.
+
+        `limit` is the largest a plate may be, in this picture's own pixels.
+        It defaults to a fraction of the picture, which is right when the
+        picture is a whole frame and wrong when it is a patch of one: a motion
+        region drawn tightly round a car at the barrier is barely wider than
+        the plate on it, and judged against that patch the plate looks far too
+        big to be a plate. The caller that cropped the patch is the one that
+        still knows how big the frame was, so it passes the limit in.
+        """
         boxes = []
         if not self.cascade.empty():
             for (x, y, w, h) in self.cascade.detectMultiScale(gray, 1.1, 4, minSize=(60, 20)):
                 boxes.append((int(x), int(y), int(w), int(h)))
         boxes.extend(self._by_contour(gray))
         height, width = gray.shape[:2]
-        boxes = [
-            b
-            for b in boxes
-            if b[2] <= width * self.MAX_WIDTH_FRACTION and b[3] <= height * self.MAX_HEIGHT_FRACTION
-        ]
-        return self._dedupe(boxes)[: self.MAX_CANDIDATES]
+        max_w, max_h = limit or (
+            width * self.MAX_WIDTH_FRACTION,
+            height * self.MAX_HEIGHT_FRACTION,
+        )
+        boxes = [b for b in boxes if b[2] <= max_w and b[3] <= max_h]
+        # Biggest first, and deliberately not "most plate-shaped first":
+        # ranking on proportions sounds better and reads worse, because the
+        # candidate that most needs to be in the top few is a plate seen at an
+        # angle, and the bounding box of a tilted plate is precisely the one
+        # that has stopped looking like a plate. Size does not have that
+        # blind spot.
+        return sorted(dedupe_boxes(boxes), key=lambda b: -b[2] * b[3])[: self.MAX_CANDIDATES]
 
     def _by_contour(self, gray):
-        """Plate glyphs are dense vertical strokes — that texture is the cue."""
-        grad = cv2.morphologyEx(
-            gray, cv2.MORPH_BLACKHAT, cv2.getStructuringElement(cv2.MORPH_RECT, (17, 5))
-        )
-        _, thresh = cv2.threshold(grad, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        closed = cv2.morphologyEx(
-            thresh, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (19, 5))
-        )
+        """Plate glyphs are dense vertical strokes — that texture is the cue.
+
+        Once per kernel, because a plate at the barrier and a plate across the
+        lane are different sizes on the sensor: the pass that joins one into a
+        single rectangle smears the other into the bumper around it.
+        """
         found = []
-        contours, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        for c in contours:
-            x, y, w, h = cv2.boundingRect(c)
-            if h == 0 or w * h < self.MIN_AREA:
-                continue
-            if self.MIN_RATIO <= w / h <= self.MAX_RATIO:
-                found.append((x, y, w, h))
+        for kernel in self.KERNELS:
+            grad = cv2.morphologyEx(
+                gray, cv2.MORPH_BLACKHAT, cv2.getStructuringElement(cv2.MORPH_RECT, kernel)
+            )
+            _, thresh = cv2.threshold(grad, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+            closed = cv2.morphologyEx(
+                thresh,
+                cv2.MORPH_CLOSE,
+                cv2.getStructuringElement(cv2.MORPH_RECT, (kernel[0] + 2, kernel[1])),
+            )
+            contours, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            for c in contours:
+                x, y, w, h = cv2.boundingRect(c)
+                if h == 0 or w * h < self.MIN_AREA:
+                    continue
+                if self.MIN_RATIO <= w / h <= self.MAX_RATIO:
+                    found.append((x, y, w, h))
         # Biggest first: on a street scene the nearest vehicle is the one at
         # the barrier, and reading it first keeps the queue in order.
-        return sorted(found, key=lambda b: -b[2] * b[3])[:6]
-
-    @staticmethod
-    def _dedupe(boxes):
-        """Both locators tend to find the same plate; keep one box per plate."""
-        kept = []
-        for box in boxes:
-            x, y, w, h = box
-            if any(abs(x - kx) < kw * 0.5 and abs(y - ky) < kh * 0.8 for kx, ky, kw, kh in kept):
-                continue
-            kept.append(box)
-        return kept
+        return sorted(dedupe_boxes(found), key=lambda b: -b[2] * b[3])[:6]
 
 
 def sharpen(crop):
@@ -234,7 +286,9 @@ class Detector:
 
     It is optional on purpose. The weights are a separate download and not
     everyone will want one, so this is used only when a path is handed in, and
-    the classical finder stays the default.
+    the classical finder stays the default — and stays in the pipeline even
+    when a model is loaded, covering the patches the model comes back empty
+    on.
     """
 
     def __init__(self, weights, confidence=0.25, image_size=1280):
@@ -292,6 +346,10 @@ class Reader:
             found = self.ocr.readtext(prepared, allowlist=ALLOWLIST)
         except Exception:
             return None
+        return self._assemble(found)
+
+    def _assemble(self, found):
+        """Turn what the recogniser saw into the one plate it most likely is."""
         if not found:
             return None
 
@@ -386,16 +444,32 @@ class Reader:
             patch = view[ay:ay + ah, ax:ax + aw]
             scale = min(1.0, self.SEARCH_WIDTH / patch.shape[1])
             search = patch if scale == 1.0 else cv2.resize(patch, None, fx=scale, fy=scale)
+            here = []
             if self.detector:
                 # The model works from pixels, not edges, so it is given the
                 # patch at its own resolution rather than the shrunken copy.
                 for (x, y, w, h) in self.detector.candidates(patch):
-                    boxes.append((ax + x, ay + y, w, h))
-            else:
+                    here.append((ax + x, ay + y, w, h))
+            # The classical finder is the model's fallback, not its rival.
+            # Where the model has put a box down, that box is the better one
+            # and adding edge-and-proportion guesses beside it only buys OCR
+            # calls on kerbstones. Where it came back empty — a plate at an
+            # angle it was never trained on, a bike at the far end of the lane
+            # — the finder still has a chance, and on a patch with no plate in
+            # it costs three morphologies on a thumbnail.
+            if not here:
                 gray = cv2.cvtColor(search, cv2.COLOR_BGR2GRAY)
-                for box in self.finder.candidates(gray):
+                # How big a plate can be is a fact about the frame, not about
+                # the patch motion happened to cut out of it, so the limit is
+                # measured on the view and carried into the patch's scale.
+                limit = (
+                    view.shape[1] * PlateFinder.MAX_WIDTH_FRACTION * scale,
+                    view.shape[0] * PlateFinder.MAX_HEIGHT_FRACTION * scale,
+                )
+                for box in self.finder.candidates(gray, limit):
                     x, y, w, h = (round(v / scale) for v in box)
-                    boxes.append((ax + x, ay + y, w, h))
+                    here.append((ax + x, ay + y, w, h))
+            boxes.extend(here)
             # The area itself is worth reading when it is already about the
             # size of a plate: the locator is a filter for big pictures, and
             # insisting on it here would throw away the region motion just
@@ -404,11 +478,20 @@ class Reader:
             if aw <= self.MAX_CROP_WIDTH:
                 boxes.append((ax, ay, aw, ah))
 
+        # Motion regions overlap, and a plate falling inside two of them was
+        # about to be found — and paid for — twice.
+        boxes = dedupe_boxes(boxes)
+
         results = []
         for (x, y, w, h) in boxes:
-            pad = max(2, h // 6)
-            x0, y0 = max(0, x - pad), max(0, y - pad)
-            x1, y1 = min(view.shape[1], x + w + pad), min(view.shape[0], y + h + pad)
+            # The locators hug the glyphs, and the recogniser wants a margin
+            # of quiet plate around them before it will commit to a character.
+            # Proportionally more of it vertically, because that is the short
+            # side — a couple of pixels there is a whole glyph's ascender.
+            pad_x, pad_y = max(3, w // 15), max(3, h // 4)
+            x0, y0 = max(0, x - pad_x), max(0, y - pad_y)
+            x1 = min(view.shape[1], x + w + pad_x)
+            y1 = min(view.shape[0], y + h + pad_y)
             hit = self.read_crop(view[y0:y1, x0:x1])
             if hit:
                 results.append(
