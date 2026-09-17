@@ -1,0 +1,8 @@
+# Video testing bench (testing/). Install in Windows PowerShell:
+#   python -m pip install -r testing\requirements-testing.txt
+# torch with CUDA and opencv-python are expected to be installed already.
+ultralytics>=8.3     # YOLO plate detection + ByteTrack tracking
+fast-plate-ocr[onnx] # OCR engine 0 (default): model trained on number plates, CPU
+easyocr>=1.7         # OCR engine 1
+pytesseract>=0.3.10  # OCR engine 2 — also needs tesseract.exe:
+                     #   winget install UB-Mannheim.TesseractOCR

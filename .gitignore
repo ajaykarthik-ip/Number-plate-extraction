@@ -23,3 +23,7 @@ desktop/release/
 .idea/
 Thumbs.db
 desktop.ini
+
+# Video testing bench: run outputs and model weights
+testing/output/
+testing/models/
