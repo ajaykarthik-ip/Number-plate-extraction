@@ -1,0 +1,47 @@
+# Ground truth for "License Plate Detection Test - Dev Drone Bhowmik (1080p, h264).mp4"
+# 1920x1080, 30 fps, 1800 frames (60 s). Oncoming traffic, two lanes, UK plates.
+#
+# Read by eye from every second of the video (full-resolution crops, zoomed where
+# a plate was small). One plate per line:
+#
+#     PLATE    seconds-visible    # note
+#
+# Lines starting with "?" are plates that are never fully visible (always partly
+# hidden behind another vehicle) or not a standard issued format. They are listed
+# for reference and are NOT counted as captured or missed.
+
+NA13NRU   0-3     # silver Skoda, left lane
+GX15OGJ   0-5     # white BMW, left lane
+MW51VSU   0-3     # dark Toyota, right lane
+AP05JEO   1-8     # silver Vauxhall Astra, right lane
+LM13VCV   3-5     # white Audi, right lane
+KH05ZZK   2-9     # blue Vauxhall Astra, left lane
+WR02FKD   8-10    # black BMW, right lane
+EY61NBG   8-12    # black Nissan Qashqai, right lane
+FJ14ZHY   9-11    # white Vauxhall Corsa, left lane
+AV08HVF   12-14   # silver Honda Jazz, left lane
+NA54KGJ   13-17   # black Smart Roadster, left lane
+BG65USJ   13-16   # white Ford Transit, right lane
+AK64DMV   15-20   # dark VW Tiguan, left lane
+OU62HYJ   16-22   # police Volvo, hard shoulder
+EF10DZT   18-21   # black Ford Fiesta, right lane
+GJ06EPD   20-29   # silver Citroen C1, right lane
+AF65JKV   21-23   # blue Ford Fiesta, right lane
+LN15ZZC   24-29   # black Toyota Auris, left lane
+KH06KSU   24-25   # black Citroen C4, left lane
+EY09VWS   26-35   # silver Nissan Primastar van, right lane
+DA07CLX   27-31   # silver Mazda 6, right lane
+BP63LYH   37-39   # white Ford Transit Custom, right lane
+WG65ZFX   40-43   # dark Volvo V60, right lane
+NL64OGX   44-47   # white Ford Transit Custom, left lane
+LP14LJA   45-48   # black Vauxhall Zafira, right lane
+HX52BPF   51-52   # blue Vauxhall Vectra, left lane
+CE61WYL   51-58   # silver VW Touran, left lane
+SC56DYP   54-59   # dark Audi A3, right lane
+
+? HN14C     11-13   # blue Mercedes A-class, plate hidden by the car in front
+? 60WNA     29-31   # dark Vauxhall Insignia, first letters always hidden
+? 7KBY      31-32   # white Renault Master van, first letters always hidden
+? LUP       36-39   # blue BMW 3-series, first letters always hidden
+? LL61PZS   44-45   # white Audi A4, blurred and half hidden
+? G18SP     58-59   # Land Rover, private plate, cut off at the end of the video

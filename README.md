@@ -11,6 +11,7 @@ Two pieces live in this repo:
 | `frontend/` + `desktop/` | **AutoGate NX** — the Next.js demo UI and its Windows desktop build |
 | `bridge.py` | **Camera bridge** — serves an RTSP camera as MJPEG, and reads plates off it |
 | `anpr.py` | **Plate reader** — motion → plate finder → OCR → format check |
+| `testing/` | **Video testing** — YOLO11 plate detection + plate OCR on recorded video, accuracy check, `/testing` page. Setup and model downloads: [`testing/README.md`](testing/README.md) |
 
 ---
 

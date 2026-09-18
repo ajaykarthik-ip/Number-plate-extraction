@@ -10,6 +10,7 @@ import {
   HiOutlineTruck,
   HiOutlineExclamationTriangle,
   HiOutlineDocumentText,
+  HiOutlineBeaker,
 } from 'react-icons/hi2'
 import { useGate } from '@/context/GateContext'
 
@@ -21,6 +22,7 @@ const navItems = [
   { href: '/vehicles',  label: 'Allowed Vehicles', icon: HiOutlineTruck },
   { href: '/alerts',    label: 'Alerts',           icon: HiOutlineExclamationTriangle },
   { href: '/logs',      label: 'Entry Log',        icon: HiOutlineDocumentText },
+  { href: '/testing',   label: 'Testing',          icon: HiOutlineBeaker },
 ]
 
 export default function Sidebar({ isOpen, onToggle }) {
