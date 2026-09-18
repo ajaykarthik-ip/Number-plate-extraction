@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 import {
@@ -17,19 +17,9 @@ import {
 import LiveSurface from '@/components/gate/LiveSurface'
 import DetectionFeed from '@/components/gate/DetectionFeed'
 import { useGate } from '@/context/GateContext'
-import { bindSource, fetchReads, pushZone } from '@/lib/bridge'
+import useLaneReader from '@/hooks/useLaneReader'
+import { bindSource, pushZone } from '@/lib/bridge'
 import { PARK_NAME } from '@/data/registry'
-
-// How often the UI asks the bridge what it has read. The reader itself works
-// at its own pace on every moving frame; this only decides how quickly a plate
-// it has already found reaches the screen.
-const POLL_MS = 1200
-
-// Reads are identified by the bridge, which numbers them per camera and never
-// reuses one. Prefixing keeps two cameras' reads apart in the shared log, and
-// the log outlives this page — it sits in GateContext, above the route — so an
-// id has to be unique for longer than the page is mounted.
-const passIdOf = (cameraId, read) => `read-${cameraId}-${read.id}`
 
 /**
  * CameraPanel on the Gate Overview only ever binds cam-1, so the lane picked
@@ -125,89 +115,23 @@ function SourceBar({ camera }) {
 }
 
 export default function LiveViewPage() {
-  const { cameras, events, registry, recordPass } = useGate()
+  const { cameras, events } = useGate()
 
   const [cameraId, setCameraId] = useState(cameras[0].id)
   const [running, setRunning] = useState(false)
-  const [live, setLive] = useState([])
   const [area, setArea] = useState(null)
   const [picking, setPicking] = useState(false)
 
   const camera = cameras.find((c) => c.id === cameraId) || cameras[0]
   const lane = camera.lane
 
+  // The reads are real now: bridge.py runs the plates through OCR and the hook
+  // polls for what it found, judges it against the allow-list and records it.
+  const { latest, error: readerError } = useLaneReader(camera, running)
+
   // Reads are recorded in the shared log, so the feed lists that rather than a
   // second private copy — otherwise every pass would appear twice.
   const detections = useMemo(() => events.filter((e) => e.lane === lane), [events, lane])
-  const latest = live[0] || null
-
-  // Registry lookups have to be current: a plate authorised on the Alerts page
-  // must clear the barrier the next time it is read here.
-  const registryRef = useRef(registry)
-  useEffect(() => {
-    registryRef.current = registry
-  }, [registry])
-
-  // Held in a ref so recording a pass does not restart the interval below.
-  const recordRef = useRef(recordPass)
-  useEffect(() => {
-    recordRef.current = recordPass
-  })
-
-  // Where the bridge's read log was last read up to. Held in a ref so a poll
-  // that lands mid-render still advances from the right place.
-  const cursor = useRef(0)
-  const [readerError, setReaderError] = useState(null)
-
-  // The reads are real now: bridge.py runs the plates through OCR and this
-  // polls for what it found. The decision is still made here, against the
-  // allow-list in the browser — the reader says what the plate is, never
-  // whether it may come in.
-  useEffect(() => {
-    if (!running) return undefined
-    let alive = true
-    cursor.current = 0
-
-    const poll = async () => {
-      try {
-        const { reads } = await fetchReads(camera.id, cursor.current)
-        if (!alive) return
-        setReaderError(null)
-        if (!reads.length) return
-        cursor.current = Math.max(cursor.current, ...reads.map((r) => r.seq || 0))
-
-        const passes = reads.map((read) => {
-          const known = registryRef.current.some((v) => v.plate === read.plate)
-          return {
-            id: passIdOf(camera.id, read),
-            plate: read.plate,
-            lane,
-            direction: lane.startsWith('Exit') ? 'out' : 'in',
-            confidence: read.confidence,
-            // The reader sees a plate, not a body style. Claiming "Car" for a
-            // lorry would be inventing detail the camera never gave us.
-            type: 'Vehicle',
-            crop: read.crop,
-            time: new Date(read.at * 1000).toLocaleTimeString('en-GB', { hour12: false }),
-            decision: known ? 'granted' : 'denied',
-          }
-        })
-        // Newest first, to match the way the feed and the overlay read.
-        const ordered = [...passes].reverse()
-        setLive((prev) => [...ordered, ...prev])
-        ordered.forEach((pass) => recordRef.current(pass))
-      } catch (err) {
-        if (alive) setReaderError(err.message)
-      }
-    }
-
-    poll()
-    const id = setInterval(poll, POLL_MS)
-    return () => {
-      alive = false
-      clearInterval(id)
-    }
-  }, [running, camera.id, lane])
 
   // The zone is drawn over the picture here but applied inside the reader, so
   // it has to travel. Clearing it sends null, which puts the whole frame back
@@ -220,10 +144,8 @@ export default function LiveViewPage() {
   // Switching cameras switches lanes, so the previous lane's reads are dropped.
   const selectCamera = (id) => {
     setCameraId(id)
-    setLive([])
     setArea(null)
     setPicking(false)
-    cursor.current = 0
   }
 
   // Three states worth telling apart, because they need different actions from

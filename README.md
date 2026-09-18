@@ -36,6 +36,7 @@ which `npm run exe` does for you.
 | Route | Shows |
 | --- | --- |
 | `/` Gate Overview | Inside now / entries / exits / blocked, camera connect panel, camera strip, recent movements |
+| `/entry` Entry Gate | The gatehouse screen for one entry lane: the barrier state, the plate at it, and **Issue visitor pass** for one that is not registered |
 | `/live` Live View | The camera picture with the scripted plate reads drawn over it, a detection zone you can drag, and the read feed |
 | `/dashboard` | In-out flow by hour, pass-type donut, weekly trend, per-block parking occupancy |
 | `/vehicles` | The allow-list — search, category filter, register a vehicle, revoke |

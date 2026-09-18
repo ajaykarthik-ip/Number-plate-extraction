@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   HiOutlineVideoCamera,
+  HiOutlineArrowRightOnRectangle,
   HiOutlineSignal,
   HiOutlineChartBar,
   HiOutlineTruck,
@@ -13,7 +14,8 @@ import {
 import { useGate } from '@/context/GateContext'
 
 const navItems = [
-  { href: '/',          label: 'Gate Overview',        icon: HiOutlineVideoCamera },
+  { href: '/',          label: 'Gate Overview',    icon: HiOutlineVideoCamera },
+  { href: '/entry',     label: 'Entry Gate',       icon: HiOutlineArrowRightOnRectangle },
   { href: '/live',      label: 'Live View',        icon: HiOutlineSignal },
   { href: '/dashboard', label: 'Dashboard',        icon: HiOutlineChartBar },
   { href: '/vehicles',  label: 'Allowed Vehicles', icon: HiOutlineTruck },
